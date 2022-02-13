@@ -64,10 +64,6 @@ namespace InvoiceLite.Api.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
 
-                    b.Property<decimal>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
 
@@ -100,6 +96,37 @@ namespace InvoiceLite.Api.Data.Migrations
                     b.ToTable("Invoices");
                 });
 
+            modelBuilder.Entity("InvoiceLite.Api.Models.InvoiceLineItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"), 1L, 1);
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.ToTable("InvoiceLineItem");
+                });
+
             modelBuilder.Entity("InvoiceLite.Api.Models.Invoice", b =>
                 {
                     b.HasOne("InvoiceLite.Api.Models.Client", "Client")
@@ -111,9 +138,23 @@ namespace InvoiceLite.Api.Data.Migrations
                     b.Navigation("Client");
                 });
 
+            modelBuilder.Entity("InvoiceLite.Api.Models.InvoiceLineItem", b =>
+                {
+                    b.HasOne("InvoiceLite.Api.Models.Invoice", null)
+                        .WithMany("LineItems")
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("InvoiceLite.Api.Models.Client", b =>
                 {
                     b.Navigation("Invoices");
+                });
+
+            modelBuilder.Entity("InvoiceLite.Api.Models.Invoice", b =>
+                {
+                    b.Navigation("LineItems");
                 });
 #pragma warning restore 612, 618
         }

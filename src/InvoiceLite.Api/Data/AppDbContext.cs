@@ -25,13 +25,24 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Invoice>(entity =>
         {
             entity.Property(i => i.Number).HasMaxLength(32).IsRequired();
-            entity.Property(i => i.Amount).HasPrecision(18, 2);
             entity.Property(i => i.Currency).HasMaxLength(3).IsRequired();
 
             entity.HasOne(i => i.Client)
                 .WithMany(c => c.Invoices)
                 .HasForeignKey(i => i.ClientId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(i => i.LineItems)
+                .WithOne()
+                .HasForeignKey(li => li.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<InvoiceLineItem>(entity =>
+        {
+            entity.Property(li => li.Description).HasMaxLength(500).IsRequired();
+            entity.Property(li => li.Quantity).HasPrecision(18, 2);
+            entity.Property(li => li.UnitPrice).HasPrecision(18, 2);
         });
     }
 }
