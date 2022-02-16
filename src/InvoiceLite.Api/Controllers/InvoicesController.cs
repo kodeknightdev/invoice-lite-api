@@ -1,6 +1,7 @@
 using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Dtos;
 using InvoiceLite.Api.Models;
+using InvoiceLite.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +12,12 @@ namespace InvoiceLite.Api.Controllers;
 public class InvoicesController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IInvoiceNumberGenerator _numbers;
 
-    public InvoicesController(AppDbContext db)
+    public InvoicesController(AppDbContext db, IInvoiceNumberGenerator numbers)
     {
         _db = db;
+        _numbers = numbers;
     }
 
     [HttpGet]
@@ -45,7 +48,7 @@ public class InvoicesController : ControllerBase
         var invoice = new Invoice
         {
             ClientId = client.Id,
-            Number = $"INV-{DateTime.UtcNow:yyyyMMddHHmmss}",
+            Number = await _numbers.NextAsync(),
             IssueDate = request.IssueDate,
             DueDate = request.DueDate,
             Currency = request.Currency ?? "usd",

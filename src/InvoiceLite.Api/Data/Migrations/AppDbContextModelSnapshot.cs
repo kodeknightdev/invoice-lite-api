@@ -93,6 +93,9 @@ namespace InvoiceLite.Api.Data.Migrations
 
                     b.HasIndex("ClientId");
 
+                    b.HasIndex("Number")
+                        .IsUnique();
+
                     b.ToTable("Invoices");
                 });
 
