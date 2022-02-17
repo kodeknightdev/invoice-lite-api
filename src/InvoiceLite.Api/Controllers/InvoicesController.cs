@@ -90,6 +90,31 @@ public class InvoicesController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("{id:int}/send")]
+    public Task<ActionResult<InvoiceDto>> Send(int id) => Transition(id, InvoiceStatus.Sent);
+
+    [HttpPost("{id:int}/mark-paid")]
+    public Task<ActionResult<InvoiceDto>> MarkPaid(int id) => Transition(id, InvoiceStatus.Paid);
+
+    [HttpPost("{id:int}/void")]
+    public Task<ActionResult<InvoiceDto>> Void(int id) => Transition(id, InvoiceStatus.Void);
+
+    private async Task<ActionResult<InvoiceDto>> Transition(int id, InvoiceStatus target)
+    {
+        var invoice = await LoadInvoice(id);
+        if (invoice == null) return NotFound();
+
+        if (!InvoiceWorkflow.CanTransition(invoice.Status, target))
+            return BadRequest(new { message = $"Cannot move invoice from {invoice.Status} to {target}." });
+
+        invoice.Status = target;
+        if (target == InvoiceStatus.Sent) invoice.SentAt = DateTime.UtcNow;
+        if (target == InvoiceStatus.Paid) invoice.PaidAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return invoice.ToDto();
+    }
+
     private Task<Invoice?> LoadInvoice(int id) =>
         _db.Invoices
             .Include(i => i.Client)
