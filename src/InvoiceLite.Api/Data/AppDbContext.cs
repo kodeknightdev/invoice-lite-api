@@ -26,6 +26,7 @@ public class AppDbContext : DbContext
         {
             entity.Property(i => i.Number).HasMaxLength(32).IsRequired();
             entity.Property(i => i.Currency).HasMaxLength(3).IsRequired();
+            entity.Property(i => i.Status).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(i => i.Number).IsUnique();
 
             entity.HasOne(i => i.Client)

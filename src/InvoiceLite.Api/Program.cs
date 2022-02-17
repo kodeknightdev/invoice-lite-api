@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Services;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

@@ -9,11 +9,14 @@ public record InvoiceDto(
     string Number,
     int ClientId,
     string? ClientName,
+    InvoiceStatus Status,
     DateTime IssueDate,
     DateTime DueDate,
     string Currency,
     string? Notes,
     decimal Total,
+    DateTime? SentAt,
+    DateTime? PaidAt,
     IReadOnlyList<LineItemDto> LineItems);
 
 public record LineItemRequest(string Description, decimal Quantity, decimal UnitPrice);
@@ -33,11 +36,14 @@ public static class InvoiceMappings
         i.Number,
         i.ClientId,
         i.Client?.Name,
+        i.Status,
         i.IssueDate,
         i.DueDate,
         i.Currency,
         i.Notes,
         i.Total,
+        i.SentAt,
+        i.PaidAt,
         i.LineItems
             .Select(li => new LineItemDto(li.Id, li.Description, li.Quantity, li.UnitPrice, li.Amount))
             .ToList());
