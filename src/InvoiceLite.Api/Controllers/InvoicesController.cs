@@ -105,7 +105,12 @@ public class InvoicesController : ControllerBase
         if (invoice == null) return NotFound();
 
         if (!InvoiceWorkflow.CanTransition(invoice.Status, target))
-            return BadRequest(new { message = $"Cannot move invoice from {invoice.Status} to {target}." });
+        {
+            return Problem(
+                title: "Invalid status transition",
+                detail: $"Cannot move invoice from {invoice.Status} to {target}.",
+                statusCode: StatusCodes.Status409Conflict);
+        }
 
         invoice.Status = target;
         if (target == InvoiceStatus.Sent) invoice.SentAt = DateTime.UtcNow;
