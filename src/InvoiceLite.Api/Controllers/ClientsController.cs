@@ -61,6 +61,9 @@ public class ClientsController : ControllerBase
         var client = await _db.Clients.FindAsync(id);
         if (client == null) return NotFound();
 
+        if (await _db.Invoices.AnyAsync(i => i.ClientId == id))
+            return Conflict(new { message = "This client has invoices and cannot be deleted." });
+
         _db.Clients.Remove(client);
         await _db.SaveChangesAsync();
         return NoContent();
