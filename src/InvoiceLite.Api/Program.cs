@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using FluentValidation.AspNetCore;
 using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Services;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,8 @@ builder.Services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
 
 builder.Services
     .AddControllers()
-    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
+    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

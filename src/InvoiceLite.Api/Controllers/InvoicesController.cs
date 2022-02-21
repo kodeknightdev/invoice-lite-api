@@ -51,7 +51,7 @@ public class InvoicesController : ControllerBase
             Number = await _numbers.NextAsync(),
             IssueDate = request.IssueDate,
             DueDate = request.DueDate,
-            Currency = request.Currency ?? "usd",
+            Currency = request.Currency?.ToLowerInvariant() ?? "usd",
             Notes = request.Notes,
             LineItems = request.LineItems.Select(ToLineItem).ToList()
         };
@@ -70,7 +70,7 @@ public class InvoicesController : ControllerBase
         invoice.ClientId = request.ClientId;
         invoice.IssueDate = request.IssueDate;
         invoice.DueDate = request.DueDate;
-        invoice.Currency = request.Currency ?? invoice.Currency;
+        invoice.Currency = request.Currency?.ToLowerInvariant() ?? invoice.Currency;
         invoice.Notes = request.Notes;
         invoice.LineItems.Clear();
         invoice.LineItems.AddRange(request.LineItems.Select(ToLineItem));
@@ -128,7 +128,7 @@ public class InvoicesController : ControllerBase
 
     private static InvoiceLineItem ToLineItem(LineItemRequest li) => new()
     {
-        Description = li.Description,
+        Description = li.Description.Trim(),
         Quantity = li.Quantity,
         UnitPrice = li.UnitPrice
     };
