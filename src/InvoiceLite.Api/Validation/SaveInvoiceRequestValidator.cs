@@ -10,6 +10,9 @@ public class SaveInvoiceRequestValidator : AbstractValidator<SaveInvoiceRequest>
     public SaveInvoiceRequestValidator()
     {
         RuleFor(x => x.ClientId).GreaterThan(0);
+        RuleFor(x => x.DueDate)
+            .GreaterThanOrEqualTo(x => x.IssueDate)
+            .WithMessage("Due date cannot be before the issue date.");
         RuleFor(x => x.Currency)
             .Must(c => c == null || SupportedCurrencies.Contains(c.ToLowerInvariant()))
             .WithMessage("Currency must be one of: usd, eur, gbp, cad.");
