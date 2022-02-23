@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using FluentValidation.AspNetCore;
+using InvoiceLite.Api.Configuration;
 using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Services;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
 
 builder.Services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
 
