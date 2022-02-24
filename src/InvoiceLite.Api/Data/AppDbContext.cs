@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,6 +46,19 @@ public class AppDbContext : DbContext
             entity.Property(li => li.Description).HasMaxLength(500).IsRequired();
             entity.Property(li => li.Quantity).HasPrecision(18, 2);
             entity.Property(li => li.UnitPrice).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.Property(p => p.StripePaymentIntentId).HasMaxLength(64).IsRequired();
+            entity.Property(p => p.Currency).HasMaxLength(3).IsRequired();
+            entity.Property(p => p.Status).HasMaxLength(32).IsRequired();
+            entity.HasIndex(p => p.StripePaymentIntentId).IsUnique();
+
+            entity.HasOne(p => p.Invoice)
+                .WithMany()
+                .HasForeignKey(p => p.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -1,4 +1,5 @@
 using InvoiceLite.Api.Configuration;
+using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Models;
 using Microsoft.Extensions.Options;
 
@@ -13,10 +14,12 @@ public interface IPaymentService
 
 public class StripePaymentService : IPaymentService
 {
+    private readonly AppDbContext _db;
     private readonly StripeOptions _options;
 
-    public StripePaymentService(IOptions<StripeOptions> options)
+    public StripePaymentService(AppDbContext db, IOptions<StripeOptions> options)
     {
+        _db = db;
         _options = options.Value;
     }
 
@@ -37,6 +40,16 @@ public class StripePaymentService : IPaymentService
                 ["invoice_number"] = invoice.Number
             }
         }, cancellationToken: ct);
+
+        _db.Payments.Add(new Payment
+        {
+            InvoiceId = invoice.Id,
+            StripePaymentIntentId = intent.Id,
+            AmountCents = amount,
+            Currency = invoice.Currency,
+            Status = intent.Status
+        });
+        await _db.SaveChangesAsync(ct);
 
         return new PaymentIntentResult(intent.Id, intent.ClientSecret, amount, invoice.Currency);
     }
