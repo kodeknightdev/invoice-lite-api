@@ -13,6 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<StripeOptions>(builder.Configuration.GetSection("Stripe"));
 
 builder.Services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
+builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 
 builder.Services
     .AddControllers()
