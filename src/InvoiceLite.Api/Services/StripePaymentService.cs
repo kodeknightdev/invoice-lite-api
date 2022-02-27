@@ -28,7 +28,7 @@ public class StripePaymentService : IPaymentService
 
     public async Task<PaymentIntentResult> CreatePaymentIntentAsync(Invoice invoice, CancellationToken ct = default)
     {
-        var amount = (long)invoice.Total;
+        var amount = ToMinorUnits(invoice.Total);
         var service = new Stripe.PaymentIntentService(new Stripe.StripeClient(_options.SecretKey));
 
         var intent = await service.CreateAsync(new Stripe.PaymentIntentCreateOptions
@@ -56,6 +56,10 @@ public class StripePaymentService : IPaymentService
 
         return new PaymentIntentResult(intent.Id, intent.ClientSecret, amount, invoice.Currency);
     }
+
+    /// <summary>Stripe amounts are in the smallest currency unit (cents).</summary>
+    public static long ToMinorUnits(decimal amount) =>
+        (long)Math.Round(amount * 100m, 0, MidpointRounding.AwayFromZero);
 
     public async Task HandleWebhookAsync(string json, string signature, CancellationToken ct = default)
     {
