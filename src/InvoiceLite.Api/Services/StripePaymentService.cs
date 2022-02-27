@@ -1,6 +1,7 @@
 using InvoiceLite.Api.Configuration;
 using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace InvoiceLite.Api.Services;
@@ -10,6 +11,8 @@ public record PaymentIntentResult(string PaymentIntentId, string ClientSecret, l
 public interface IPaymentService
 {
     Task<PaymentIntentResult> CreatePaymentIntentAsync(Invoice invoice, CancellationToken ct = default);
+    Task HandleWebhookAsync(string json, string signature, CancellationToken ct = default);
+    Task<bool> MarkPaymentSucceededAsync(string paymentIntentId, CancellationToken ct = default);
 }
 
 public class StripePaymentService : IPaymentService
@@ -52,5 +55,34 @@ public class StripePaymentService : IPaymentService
         await _db.SaveChangesAsync(ct);
 
         return new PaymentIntentResult(intent.Id, intent.ClientSecret, amount, invoice.Currency);
+    }
+
+    public async Task HandleWebhookAsync(string json, string signature, CancellationToken ct = default)
+    {
+        var stripeEvent = Stripe.EventUtility.ConstructEvent(json, signature, _options.WebhookSecret);
+
+        if (stripeEvent.Type == Stripe.Events.PaymentIntentSucceeded &&
+            stripeEvent.Data.Object is Stripe.PaymentIntent intent)
+        {
+            await MarkPaymentSucceededAsync(intent.Id, ct);
+        }
+    }
+
+    public async Task<bool> MarkPaymentSucceededAsync(string paymentIntentId, CancellationToken ct = default)
+    {
+        var payment = await _db.Payments
+            .Include(p => p.Invoice)
+            .SingleOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, ct);
+        if (payment?.Invoice == null) return false;
+
+        payment.Status = "succeeded";
+        if (payment.Invoice.Status == InvoiceStatus.Sent)
+        {
+            payment.Invoice.Status = InvoiceStatus.Paid;
+            payment.Invoice.PaidAt = DateTime.UtcNow;
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return true;
     }
 }
