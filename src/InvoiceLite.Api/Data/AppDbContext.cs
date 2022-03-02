@@ -12,9 +12,18 @@ public class AppDbContext : DbContext
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.Property(u => u.Email).HasMaxLength(320).IsRequired();
+            entity.Property(u => u.PasswordHash).HasMaxLength(100).IsRequired();
+            entity.Property(u => u.DisplayName).HasMaxLength(100);
+            entity.HasIndex(u => u.Email).IsUnique();
+        });
+
         modelBuilder.Entity<Client>(entity =>
         {
             entity.Property(c => c.Name).HasMaxLength(200).IsRequired();
