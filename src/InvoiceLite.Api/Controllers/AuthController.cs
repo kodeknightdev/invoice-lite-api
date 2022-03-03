@@ -2,12 +2,14 @@ using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Dtos;
 using InvoiceLite.Api.Models;
 using InvoiceLite.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace InvoiceLite.Api.Controllers;
 
 [ApiController]
+[AllowAnonymous]
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {

@@ -5,6 +5,7 @@ using InvoiceLite.Api.Configuration;
 using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -38,6 +39,14 @@ builder.Services
             ClockSkew = TimeSpan.FromMinutes(1)
         };
     });
+
+// Everything requires a signed-in user unless explicitly marked [AllowAnonymous].
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 builder.Services
     .AddControllers()
