@@ -5,7 +5,7 @@ namespace InvoiceLite.Api.Services;
 
 public interface IInvoiceNumberGenerator
 {
-    Task<string> NextAsync(CancellationToken ct = default);
+    Task<string> NextAsync(int userId, CancellationToken ct = default);
 }
 
 public class InvoiceNumberGenerator : IInvoiceNumberGenerator
@@ -17,9 +17,9 @@ public class InvoiceNumberGenerator : IInvoiceNumberGenerator
         _db = db;
     }
 
-    public async Task<string> NextAsync(CancellationToken ct = default)
+    public async Task<string> NextAsync(int userId, CancellationToken ct = default)
     {
-        var count = await _db.Invoices.CountAsync(ct);
+        var count = await _db.Invoices.CountAsync(i => i.UserId == userId, ct);
         return $"INV-{count + 1:D4}";
     }
 }

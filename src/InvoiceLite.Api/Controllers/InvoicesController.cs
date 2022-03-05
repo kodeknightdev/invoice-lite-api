@@ -1,5 +1,6 @@
 using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Dtos;
+using InvoiceLite.Api.Extensions;
 using InvoiceLite.Api.Models;
 using InvoiceLite.Api.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,9 @@ public class InvoicesController : ControllerBase
     [HttpGet]
     public async Task<IEnumerable<InvoiceDto>> GetAll()
     {
+        var userId = User.GetUserId();
         var invoices = await _db.Invoices
+            .Where(i => i.UserId == userId)
             .Include(i => i.Client)
             .Include(i => i.LineItems)
             .OrderByDescending(i => i.IssueDate)
@@ -42,13 +45,15 @@ public class InvoicesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<InvoiceDto>> Create(SaveInvoiceRequest request)
     {
-        var client = await _db.Clients.FindAsync(request.ClientId);
+        var userId = User.GetUserId();
+        var client = await FindClient(request.ClientId);
         if (client == null) return BadRequest(new { message = "Client not found." });
 
         var invoice = new Invoice
         {
+            UserId = userId,
             ClientId = client.Id,
-            Number = await _numbers.NextAsync(),
+            Number = await _numbers.NextAsync(userId),
             IssueDate = request.IssueDate,
             DueDate = request.DueDate,
             Currency = request.Currency?.ToLowerInvariant() ?? "usd",
@@ -67,7 +72,11 @@ public class InvoicesController : ControllerBase
         var invoice = await LoadInvoice(id);
         if (invoice == null) return NotFound();
 
-        invoice.ClientId = request.ClientId;
+        var client = await FindClient(request.ClientId);
+        if (client == null) return BadRequest(new { message = "Client not found." });
+
+        invoice.ClientId = client.Id;
+        invoice.Client = client;
         invoice.IssueDate = request.IssueDate;
         invoice.DueDate = request.DueDate;
         invoice.Currency = request.Currency?.ToLowerInvariant() ?? invoice.Currency;
@@ -82,7 +91,7 @@ public class InvoicesController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var invoice = await _db.Invoices.FindAsync(id);
+        var invoice = await LoadInvoice(id);
         if (invoice == null) return NotFound();
 
         _db.Invoices.Remove(invoice);
@@ -120,11 +129,20 @@ public class InvoicesController : ControllerBase
         return invoice.ToDto();
     }
 
-    private Task<Invoice?> LoadInvoice(int id) =>
-        _db.Invoices
+    private Task<Invoice?> LoadInvoice(int id)
+    {
+        var userId = User.GetUserId();
+        return _db.Invoices
             .Include(i => i.Client)
             .Include(i => i.LineItems)
-            .SingleOrDefaultAsync(i => i.Id == id);
+            .SingleOrDefaultAsync(i => i.Id == id && i.UserId == userId);
+    }
+
+    private Task<Client?> FindClient(int clientId)
+    {
+        var userId = User.GetUserId();
+        return _db.Clients.SingleOrDefaultAsync(c => c.Id == clientId && c.UserId == userId);
+    }
 
     private static InvoiceLineItem ToLineItem(LineItemRequest li) => new()
     {

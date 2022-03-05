@@ -1,5 +1,6 @@
 using InvoiceLite.Api.Configuration;
 using InvoiceLite.Api.Data;
+using InvoiceLite.Api.Extensions;
 using InvoiceLite.Api.Models;
 using InvoiceLite.Api.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -26,9 +27,10 @@ public class PaymentsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(int invoiceId, CancellationToken ct)
     {
+        var userId = User.GetUserId();
         var invoice = await _db.Invoices
             .Include(i => i.LineItems)
-            .SingleOrDefaultAsync(i => i.Id == invoiceId, ct);
+            .SingleOrDefaultAsync(i => i.Id == invoiceId && i.UserId == userId, ct);
         if (invoice == null) return NotFound();
 
         if (invoice.Status != InvoiceStatus.Sent)

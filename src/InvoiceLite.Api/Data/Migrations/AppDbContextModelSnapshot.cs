@@ -51,7 +51,12 @@ namespace InvoiceLite.Api.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Clients");
                 });
@@ -100,12 +105,17 @@ namespace InvoiceLite.Api.Data.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("nvarchar(16)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
 
                     b.HasIndex("Number")
                         .IsUnique();
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Invoices");
                 });
@@ -216,11 +226,26 @@ namespace InvoiceLite.Api.Data.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("InvoiceLite.Api.Models.Client", b =>
+                {
+                    b.HasOne("InvoiceLite.Api.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("InvoiceLite.Api.Models.Invoice", b =>
                 {
                     b.HasOne("InvoiceLite.Api.Models.Client", "Client")
                         .WithMany("Invoices")
                         .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("InvoiceLite.Api.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

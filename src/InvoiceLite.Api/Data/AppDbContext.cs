@@ -30,6 +30,11 @@ public class AppDbContext : DbContext
             entity.Property(c => c.Email).HasMaxLength(320).IsRequired();
             entity.Property(c => c.Company).HasMaxLength(200);
             entity.Property(c => c.Address).HasMaxLength(500);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Invoice>(entity =>
@@ -38,6 +43,11 @@ public class AppDbContext : DbContext
             entity.Property(i => i.Currency).HasMaxLength(3).IsRequired();
             entity.Property(i => i.Status).HasConversion<string>().HasMaxLength(16);
             entity.HasIndex(i => i.Number).IsUnique();
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(i => i.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(i => i.Client)
                 .WithMany(c => c.Invoices)
