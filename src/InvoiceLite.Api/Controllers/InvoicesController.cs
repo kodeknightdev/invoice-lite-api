@@ -12,142 +12,87 @@ namespace InvoiceLite.Api.Controllers;
 [Route("api/invoices")]
 public class InvoicesController : ControllerBase
 {
-    private readonly AppDbContext _db;
-    private readonly IInvoiceNumberGenerator _numbers;
+    private readonly IInvoiceService _invoices;
 
-    public InvoicesController(AppDbContext db, IInvoiceNumberGenerator numbers)
+    public InvoicesController(IInvoiceService invoices)
     {
-        _db = db;
-        _numbers = numbers;
+        _invoices = invoices;
     }
 
     [HttpGet]
-    public async Task<IEnumerable<InvoiceDto>> GetAll()
+    public async Task<IEnumerable<InvoiceDto>> GetAll(CancellationToken ct)
     {
-        var userId = User.GetUserId();
-        var invoices = await _db.Invoices
-            .Where(i => i.UserId == userId)
-            .Include(i => i.Client)
-            .Include(i => i.LineItems)
-            .OrderByDescending(i => i.IssueDate)
-            .ToListAsync();
+        var invoices = await _invoices.ListAsync(User.GetUserId(), ct);
         return invoices.Select(i => i.ToDto());
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<InvoiceDto>> Get(int id)
+    public async Task<ActionResult<InvoiceDto>> Get(int id, CancellationToken ct)
     {
-        var invoice = await LoadInvoice(id);
+        var invoice = await _invoices.GetAsync(User.GetUserId(), id, ct);
         if (invoice == null) return NotFound();
         return invoice.ToDto();
     }
 
     [HttpPost]
-    public async Task<ActionResult<InvoiceDto>> Create(SaveInvoiceRequest request)
-    {
-        var userId = User.GetUserId();
-        var client = await FindClient(request.ClientId);
-        if (client == null) return BadRequest(new { message = "Client not found." });
-
-        var invoice = new Invoice
+    public Task<ActionResult<InvoiceDto>> Create(SaveInvoiceRequest request, CancellationToken ct) =>
+        Execute(async () =>
         {
-            UserId = userId,
-            ClientId = client.Id,
-            Number = await _numbers.NextAsync(userId),
-            IssueDate = request.IssueDate,
-            DueDate = request.DueDate,
-            Currency = request.Currency?.ToLowerInvariant() ?? "usd",
-            Notes = request.Notes,
-            LineItems = request.LineItems.Select(ToLineItem).ToList()
-        };
-        _db.Invoices.Add(invoice);
-        await _db.SaveChangesAsync();
-
-        return CreatedAtAction(nameof(Get), new { id = invoice.Id }, invoice.ToDto());
-    }
+            var invoice = await _invoices.CreateAsync(User.GetUserId(), request, ct);
+            return CreatedAtAction(nameof(Get), new { id = invoice.Id }, invoice.ToDto());
+        });
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<InvoiceDto>> Update(int id, SaveInvoiceRequest request)
-    {
-        var invoice = await LoadInvoice(id);
-        if (invoice == null) return NotFound();
-
-        var client = await FindClient(request.ClientId);
-        if (client == null) return BadRequest(new { message = "Client not found." });
-
-        invoice.ClientId = client.Id;
-        invoice.Client = client;
-        invoice.IssueDate = request.IssueDate;
-        invoice.DueDate = request.DueDate;
-        invoice.Currency = request.Currency?.ToLowerInvariant() ?? invoice.Currency;
-        invoice.Notes = request.Notes;
-        invoice.LineItems.Clear();
-        invoice.LineItems.AddRange(request.LineItems.Select(ToLineItem));
-        await _db.SaveChangesAsync();
-
-        return invoice.ToDto();
-    }
+    public Task<ActionResult<InvoiceDto>> Update(int id, SaveInvoiceRequest request, CancellationToken ct) =>
+        Execute(async () =>
+        {
+            var invoice = await _invoices.UpdateAsync(User.GetUserId(), id, request, ct);
+            if (invoice == null) return NotFound();
+            return invoice.ToDto();
+        });
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var invoice = await LoadInvoice(id);
-        if (invoice == null) return NotFound();
-
-        _db.Invoices.Remove(invoice);
-        await _db.SaveChangesAsync();
-        return NoContent();
+        try
+        {
+            return await _invoices.DeleteAsync(User.GetUserId(), id, ct) ? NoContent() : NotFound();
+        }
+        catch (InvoiceRuleException ex)
+        {
+            return Problem(title: ex.Title, detail: ex.Message, statusCode: ex.StatusCode);
+        }
     }
 
     [HttpPost("{id:int}/send")]
-    public Task<ActionResult<InvoiceDto>> Send(int id) => Transition(id, InvoiceStatus.Sent);
+    public Task<ActionResult<InvoiceDto>> Send(int id, CancellationToken ct) =>
+        Transition(id, InvoiceStatus.Sent, ct);
 
     [HttpPost("{id:int}/mark-paid")]
-    public Task<ActionResult<InvoiceDto>> MarkPaid(int id) => Transition(id, InvoiceStatus.Paid);
+    public Task<ActionResult<InvoiceDto>> MarkPaid(int id, CancellationToken ct) =>
+        Transition(id, InvoiceStatus.Paid, ct);
 
     [HttpPost("{id:int}/void")]
-    public Task<ActionResult<InvoiceDto>> Void(int id) => Transition(id, InvoiceStatus.Void);
+    public Task<ActionResult<InvoiceDto>> Void(int id, CancellationToken ct) =>
+        Transition(id, InvoiceStatus.Void, ct);
 
-    private async Task<ActionResult<InvoiceDto>> Transition(int id, InvoiceStatus target)
-    {
-        var invoice = await LoadInvoice(id);
-        if (invoice == null) return NotFound();
-
-        if (!InvoiceWorkflow.CanTransition(invoice.Status, target))
+    private Task<ActionResult<InvoiceDto>> Transition(int id, InvoiceStatus target, CancellationToken ct) =>
+        Execute(async () =>
         {
-            return Problem(
-                title: "Invalid status transition",
-                detail: $"Cannot move invoice from {invoice.Status} to {target}.",
-                statusCode: StatusCodes.Status409Conflict);
+            var invoice = await _invoices.TransitionAsync(User.GetUserId(), id, target, ct);
+            if (invoice == null) return NotFound();
+            return invoice.ToDto();
+        });
+
+    private async Task<ActionResult<InvoiceDto>> Execute(Func<Task<ActionResult<InvoiceDto>>> action)
+    {
+        try
+        {
+            return await action();
         }
-
-        invoice.Status = target;
-        if (target == InvoiceStatus.Sent) invoice.SentAt = DateTime.UtcNow;
-        if (target == InvoiceStatus.Paid) invoice.PaidAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-
-        return invoice.ToDto();
+        catch (InvoiceRuleException ex)
+        {
+            return Problem(title: ex.Title, detail: ex.Message, statusCode: ex.StatusCode);
+        }
     }
-
-    private Task<Invoice?> LoadInvoice(int id)
-    {
-        var userId = User.GetUserId();
-        return _db.Invoices
-            .Include(i => i.Client)
-            .Include(i => i.LineItems)
-            .SingleOrDefaultAsync(i => i.Id == id && i.UserId == userId);
-    }
-
-    private Task<Client?> FindClient(int clientId)
-    {
-        var userId = User.GetUserId();
-        return _db.Clients.SingleOrDefaultAsync(c => c.Id == clientId && c.UserId == userId);
-    }
-
-    private static InvoiceLineItem ToLineItem(LineItemRequest li) => new()
-    {
-        Description = li.Description.Trim(),
-        Quantity = li.Quantity,
-        UnitPrice = li.UnitPrice
-    };
 }
