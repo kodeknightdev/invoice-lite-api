@@ -7,6 +7,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BF01986F-5C2
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvoiceLite.Api", "src\InvoiceLite.Api\InvoiceLite.Api.csproj", "{00831A2E-FD1B-4873-8AD4-1CAD5B087643}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3D6ABBEF-3B7A-40A0-9EB6-2A670462A6EA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvoiceLite.Api.Tests", "tests\InvoiceLite.Api.Tests\InvoiceLite.Api.Tests.csproj", "{BF760CAF-C041-4A20-9AD8-8C1654A3CE36}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,8 +24,13 @@ Global
 		{00831A2E-FD1B-4873-8AD4-1CAD5B087643}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{00831A2E-FD1B-4873-8AD4-1CAD5B087643}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{00831A2E-FD1B-4873-8AD4-1CAD5B087643}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BF760CAF-C041-4A20-9AD8-8C1654A3CE36}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BF760CAF-C041-4A20-9AD8-8C1654A3CE36}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BF760CAF-C041-4A20-9AD8-8C1654A3CE36}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BF760CAF-C041-4A20-9AD8-8C1654A3CE36}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{00831A2E-FD1B-4873-8AD4-1CAD5B087643} = {BF01986F-5C2B-4D3B-8506-63042B3ABA05}
+		{BF760CAF-C041-4A20-9AD8-8C1654A3CE36} = {3D6ABBEF-3B7A-40A0-9EB6-2A670462A6EA}
 	EndGlobalSection
 EndGlobal
