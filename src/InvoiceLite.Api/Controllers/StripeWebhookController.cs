@@ -1,9 +1,13 @@
 using InvoiceLite.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InvoiceLite.Api.Controllers;
 
+// Stripe calls this without a JWT; requests are authenticated by the
+// Stripe-Signature header instead.
 [ApiController]
+[AllowAnonymous]
 [Route("api/webhooks/stripe")]
 public class StripeWebhookController : ControllerBase
 {
