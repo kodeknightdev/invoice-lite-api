@@ -22,4 +22,7 @@ public class Invoice
 
     [NotMapped]
     public decimal Total => LineItems.Sum(li => li.Amount);
+
+    [NotMapped]
+    public bool IsOverdue => Status == InvoiceStatus.Sent && DueDate < DateTime.Now;
 }
