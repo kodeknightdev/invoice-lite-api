@@ -67,6 +67,7 @@ public class InvoiceService : IInvoiceService
         var invoice = await GetAsync(userId, id, ct);
         if (invoice == null) return null;
 
+        EnsureDraft(invoice, "edited");
         await EnsureClientBelongsToUser(userId, request.ClientId, ct);
 
         invoice.ClientId = request.ClientId;
@@ -87,6 +88,7 @@ public class InvoiceService : IInvoiceService
         var invoice = await GetAsync(userId, id, ct);
         if (invoice == null) return false;
 
+        EnsureDraft(invoice, "deleted");
         _db.Invoices.Remove(invoice);
         await _db.SaveChangesAsync(ct);
         return true;
@@ -120,6 +122,16 @@ public class InvoiceService : IInvoiceService
                 "Client not found",
                 "The selected client does not exist.",
                 StatusCodes.Status400BadRequest);
+        }
+    }
+
+    private static void EnsureDraft(Invoice invoice, string action)
+    {
+        if (invoice.Status != InvoiceStatus.Draft)
+        {
+            throw new InvoiceRuleException(
+                "Invoice is locked",
+                $"Only draft invoices can be {action}. This one is {invoice.Status}.");
         }
     }
 

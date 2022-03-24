@@ -94,4 +94,16 @@ public class InvoiceServiceTests : IDisposable
         Assert.Null(await _service.TransitionAsync(OtherUserId, invoice.Id, InvoiceStatus.Sent));
         Assert.False(await _service.DeleteAsync(OtherUserId, invoice.Id));
     }
+
+    [Fact]
+    public async Task Sent_invoices_cannot_be_edited_or_deleted()
+    {
+        var invoice = await _service.CreateAsync(UserId, NewRequest());
+        await _service.TransitionAsync(UserId, invoice.Id, InvoiceStatus.Sent);
+
+        await Assert.ThrowsAsync<InvoiceRuleException>(
+            () => _service.UpdateAsync(UserId, invoice.Id, NewRequest()));
+        await Assert.ThrowsAsync<InvoiceRuleException>(
+            () => _service.DeleteAsync(UserId, invoice.Id));
+    }
 }
