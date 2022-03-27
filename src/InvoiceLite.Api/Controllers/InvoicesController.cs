@@ -20,10 +20,14 @@ public class InvoicesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IEnumerable<InvoiceDto>> GetAll(CancellationToken ct)
+    public async Task<PagedResult<InvoiceDto>> GetAll([FromQuery] InvoiceQuery query, CancellationToken ct)
     {
-        var invoices = await _invoices.ListAsync(User.GetUserId(), ct);
-        return invoices.Select(i => i.ToDto());
+        var result = await _invoices.ListAsync(User.GetUserId(), query, ct);
+        return new PagedResult<InvoiceDto>(
+            result.Items.Select(i => i.ToDto()).ToList(),
+            result.Page,
+            result.PageSize,
+            result.TotalCount);
     }
 
     [HttpGet("{id:int}")]

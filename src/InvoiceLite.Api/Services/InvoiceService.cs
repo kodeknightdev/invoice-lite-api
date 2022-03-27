@@ -7,7 +7,7 @@ namespace InvoiceLite.Api.Services;
 
 public interface IInvoiceService
 {
-    Task<List<Invoice>> ListAsync(int userId, CancellationToken ct = default);
+    Task<PagedResult<Invoice>> ListAsync(int userId, InvoiceQuery query, CancellationToken ct = default);
     Task<Invoice?> GetAsync(int userId, int id, CancellationToken ct = default);
     Task<Invoice> CreateAsync(int userId, SaveInvoiceRequest request, CancellationToken ct = default);
     Task<Invoice?> UpdateAsync(int userId, int id, SaveInvoiceRequest request, CancellationToken ct = default);
@@ -17,6 +17,8 @@ public interface IInvoiceService
 
 public class InvoiceService : IInvoiceService
 {
+    private const int MaxPageSize = 100;
+
     private readonly AppDbContext _db;
     private readonly IInvoiceNumberGenerator _numbers;
 
@@ -26,13 +28,25 @@ public class InvoiceService : IInvoiceService
         _numbers = numbers;
     }
 
-    public Task<List<Invoice>> ListAsync(int userId, CancellationToken ct = default) =>
-        _db.Invoices
-            .Where(i => i.UserId == userId)
+    public async Task<PagedResult<Invoice>> ListAsync(int userId, InvoiceQuery query, CancellationToken ct = default)
+    {
+        var page = Math.Max(1, query.Page);
+        var pageSize = Math.Clamp(query.PageSize, 1, MaxPageSize);
+
+        var invoices = _db.Invoices.Where(i => i.UserId == userId);
+
+        var total = await invoices.CountAsync(ct);
+        var items = await invoices
             .Include(i => i.Client)
             .Include(i => i.LineItems)
             .OrderByDescending(i => i.IssueDate)
+            .ThenByDescending(i => i.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(ct);
+
+        return new PagedResult<Invoice>(items, page, pageSize, total);
+    }
 
     public Task<Invoice?> GetAsync(int userId, int id, CancellationToken ct = default) =>
         _db.Invoices

@@ -106,4 +106,17 @@ public class InvoiceServiceTests : IDisposable
         await Assert.ThrowsAsync<InvoiceRuleException>(
             () => _service.DeleteAsync(UserId, invoice.Id));
     }
+
+    [Fact]
+    public async Task ListAsync_returns_requested_page_and_total()
+    {
+        for (var i = 0; i < 5; i++)
+            await _service.CreateAsync(UserId, NewRequest());
+
+        var result = await _service.ListAsync(UserId, new InvoiceQuery { Page = 2, PageSize = 2 });
+
+        Assert.Equal(5, result.TotalCount);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal(new[] { "INV-0003", "INV-0002" }, result.Items.Select(i => i.Number));
+    }
 }
