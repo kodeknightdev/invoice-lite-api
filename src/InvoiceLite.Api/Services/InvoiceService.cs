@@ -34,6 +34,10 @@ public class InvoiceService : IInvoiceService
         var pageSize = Math.Clamp(query.PageSize, 1, MaxPageSize);
 
         var invoices = _db.Invoices.Where(i => i.UserId == userId);
+        if (query.Status.HasValue)
+            invoices = invoices.Where(i => i.Status == query.Status.Value);
+        if (query.ClientId.HasValue)
+            invoices = invoices.Where(i => i.ClientId == query.ClientId.Value);
 
         var total = await invoices.CountAsync(ct);
         var items = await invoices

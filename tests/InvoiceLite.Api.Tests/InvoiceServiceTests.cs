@@ -119,4 +119,16 @@ public class InvoiceServiceTests : IDisposable
         Assert.Equal(2, result.Items.Count);
         Assert.Equal(new[] { "INV-0003", "INV-0002" }, result.Items.Select(i => i.Number));
     }
+
+    [Fact]
+    public async Task ListAsync_filters_by_status()
+    {
+        var sent = await _service.CreateAsync(UserId, NewRequest());
+        await _service.CreateAsync(UserId, NewRequest());
+        await _service.TransitionAsync(UserId, sent.Id, InvoiceStatus.Sent);
+
+        var result = await _service.ListAsync(UserId, new InvoiceQuery { Status = InvoiceStatus.Sent });
+
+        Assert.Equal(sent.Id, Assert.Single(result.Items).Id);
+    }
 }
