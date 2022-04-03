@@ -23,6 +23,7 @@ public class Invoice
     [NotMapped]
     public decimal Total => LineItems.Sum(li => li.Amount);
 
+    // DueDate is a calendar date; an invoice due today is not overdue until tomorrow.
     [NotMapped]
-    public bool IsOverdue => Status == InvoiceStatus.Sent && DueDate < DateTime.Now;
+    public bool IsOverdue => Status == InvoiceStatus.Sent && DueDate.Date < DateTime.UtcNow.Date;
 }
