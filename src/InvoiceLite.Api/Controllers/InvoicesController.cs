@@ -1,10 +1,8 @@
-using InvoiceLite.Api.Data;
 using InvoiceLite.Api.Dtos;
 using InvoiceLite.Api.Extensions;
 using InvoiceLite.Api.Models;
 using InvoiceLite.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace InvoiceLite.Api.Controllers;
 
