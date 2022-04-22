@@ -1,6 +1,6 @@
 # invoice-lite-api
 
-Backend for Invoice Lite, a small invoicing tool for freelancers. You can manage clients, build invoices, move them through a draft → sent → paid workflow and take card payments with Stripe (test mode only).
+Backend for **Invoice Lite**, a lightweight invoicing and billing application designed to help freelancers manage their clients, create and track invoices, and streamline their billing workflow. The backend provides APIs for client management, invoice creation and updates, invoice status tracking, and payment processing. It supports a complete invoice lifecycle, allowing invoices to move through **Draft → Sent → Paid** statuses, while integrating with **Stripe in test mode** to simulate secure card payments. The application is designed with a clear separation of business logic and API endpoints, making it easier to maintain, extend, and integrate with a frontend application.
 
 The React frontend is a separate repo, `invoice-lite-web`.
 
